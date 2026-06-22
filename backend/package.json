@@ -2,6 +2,7 @@
    "name": "backend",
    "version": "0.0.1",
    "description": "NutrIA Backend API - Express + TypeORM",
+   "private": true,
    "type": "commonjs",
    "devDependencies": {
       "@types/axios": "^0.14.0",

@@ -43,50 +43,47 @@ NutrIA é um aplicativo inteligente para contabilização de calorias e acompanh
    cd nutria
    ```
 
-#### 2. Backend
-1. Acesse o diretório do backend:
+#### 2. Instale as dependências na raiz
+1. Instale tudo uma vez, a partir da raiz do projeto:
    ```bash
-   cd backend
+   npm install
    ```
-2. Suba o banco de dados com Docker (a partir da raiz do projeto):
+
+#### 3. Backend
+1. Suba o banco de dados com Docker:
    ```bash
    docker compose up -d
    ```
-3. Preencha o arquivo `.env` com as credenciais necessárias. As variáveis de conexão ao PostgreSQL já estão pré-configuradas para o Docker local. Adicione apenas a `OPEN_AI_API_KEY` do seu serviço OpenAI.
+2. Preencha o arquivo `.env` com as credenciais necessárias. As variáveis de conexão ao PostgreSQL já estão pré-configuradas para o Docker local. Adicione apenas a `OPEN_AI_API_KEY` do seu serviço OpenAI.
 
-4. Instale as dependências:
+3. Execute as migrations para criar as tabelas do banco de dados:
    ```bash
-   npm install
+   npm run backend:migrate
    ```
-5. Execute as migrations para criar as tabelas do banco de dados:
+4. Popule o banco com os alimentos verificados:
    ```bash
-   npm run db:migrate
+   npm run backend:seed
    ```
-6. Popule o banco com os alimentos verificados:
+5. Inicie o servidor:
    ```bash
-   npm run db:seed
-   ```
-7. Inicie o servidor:
-   ```bash
-   npm start
+   npm run dev:backend
    ```
 
-#### 3. Frontend
-1. Em outro terminal acesse o diretório do frontend:
-   ```bash
-   cd frontend
-   ```
-2. Atualize o arquivo .env com as informações apontadas ao Backend. Um arquivo de exemplo (.env) está disponível no projeto para referência.
-   > **Observação:** Para utilizar o Expo em múltiplos dispositivos de forma simultânea subistituir o localhost pelo IP da máquina que hospeda o servidor backend.
+#### 4. Frontend
+1. Atualize o arquivo `.env` com as informações apontadas ao Backend. Um arquivo de exemplo está disponível no projeto para referência.
+   > **Observação:** para usar o Expo em múltiplos dispositivos, substitua `localhost` pelo IP da máquina que hospeda o backend.
 
-3. Instale as dependências:
+2. Inicie o aplicativo com o Expo pela raiz do projeto:
    ```bash
-   npm install
+   npm run dev:frontend
    ```
-4. Inicie o aplicativo com o Expo:
-   ```bash
-   npx expo start
-   ```
+
+#### 5. Executar os dois juntos
+```bash
+npm run dev
+```
+
+> **Estrutura do projeto com workspaces:** há um único `node_modules` gerenciado na raiz do repositório, enquanto `backend/` e `frontend/` mantêm seus próprios `package.json`.
 
 ## ✒️ Autores
 * Fernando Henriques Neto &nbsp;18.00931-0 
