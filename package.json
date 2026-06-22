@@ -17,7 +17,7 @@
     "build": "npm -w backend run build && npm -w frontend run build",
     "build:backend": "npm -w backend run build",
     "build:frontend": "npm -w frontend run build",
-    "clean": "rm -rf node_modules backend/node_modules frontend/node_modules build dist",
+    "clean": "rm -rf node_modules backend/node_modules frontend/node_modules backend/dist frontend/dist",
     "backend:start": "npm -w backend run start",
     "backend:seed": "npm -w backend run db:seed",
     "backend:migrate": "npm -w backend run db:migrate",

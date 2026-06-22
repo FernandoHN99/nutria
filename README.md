@@ -54,26 +54,34 @@ NutrIA é um aplicativo inteligente para contabilização de calorias e acompanh
    ```bash
    docker compose up -d
    ```
-2. Preencha o arquivo `.env` com as credenciais necessárias. As variáveis de conexão ao PostgreSQL já estão pré-configuradas para o Docker local. Adicione apenas a `OPEN_AI_API_KEY` do seu serviço OpenAI.
+2. Crie o env do backend a partir do exemplo:
+   ```bash
+   cp backend/.env.example backend/.env
+   ```
+3. Preencha o `backend/.env` com as credenciais necessárias. As variáveis de conexão ao PostgreSQL já estão pré-configuradas para o Docker local. Adicione apenas a `BACKEND_OPEN_AI_API_KEY` se for usar o chatbot.
 
-3. Execute as migrations para criar as tabelas do banco de dados:
+4. Execute as migrations para criar as tabelas do banco de dados:
    ```bash
    npm run backend:migrate
    ```
-4. Popule o banco com os alimentos verificados:
+5. Popule o banco com os alimentos verificados:
    ```bash
    npm run backend:seed
    ```
-5. Inicie o servidor:
+6. Inicie o servidor:
    ```bash
    npm run dev:backend
    ```
 
 #### 4. Frontend
-1. Atualize o arquivo `.env` com as informações apontadas ao Backend. Um arquivo de exemplo está disponível no projeto para referência.
+1. Crie o env do frontend a partir do exemplo:
+   ```bash
+   cp frontend/.env.example frontend/.env
+   ```
+2. Atualize o `frontend/.env` com as informações apontadas ao backend.
    > **Observação:** para usar o Expo em múltiplos dispositivos, substitua `localhost` pelo IP da máquina que hospeda o backend.
 
-2. Inicie o aplicativo com o Expo pela raiz do projeto:
+3. Inicie o aplicativo com o Expo pela raiz do projeto:
    ```bash
    npm run dev:frontend
    ```
@@ -83,7 +91,7 @@ NutrIA é um aplicativo inteligente para contabilização de calorias e acompanh
 npm run dev
 ```
 
-> **Estrutura do projeto com workspaces:** há um único `node_modules` gerenciado na raiz do repositório, enquanto `backend/` e `frontend/` mantêm seus próprios `package.json`.
+> **Estrutura do projeto com workspaces:** há um único `node_modules` gerenciado na raiz do repositório, enquanto `backend/` e `frontend/` mantêm seus próprios `package.json` e `.env` separados.
 
 ## ✒️ Autores
 * Fernando Henriques Neto &nbsp;18.00931-0 

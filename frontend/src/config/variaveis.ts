@@ -1,9 +1,9 @@
 import { BACKEND_URL, BACKEND_PORTA } from '@env';
 
-export const DOMINIO_BACKEND: string = BACKEND_URL ?? '';
-export const PORTA_BACKEND: number = BACKEND_PORTA ?? '';
+export const DOMINIO_BACKEND: string = String(BACKEND_URL ?? '').replace(/\/$/, '');
+export const PORTA_BACKEND: string = String(BACKEND_PORTA ?? '').trim();
 export const ENDPOINT: string = '/nutria'
-export const URL_BACKEND: string = `${DOMINIO_BACKEND}:${PORTA_BACKEND}${ENDPOINT}`
+export const URL_BACKEND: string = `${DOMINIO_BACKEND}${PORTA_BACKEND ? `:${PORTA_BACKEND}` : ''}${ENDPOINT}`
 export const TOKEN_KEY = 'authToken';
 export const REFRESH_KEY = 'refreshToken';
 
