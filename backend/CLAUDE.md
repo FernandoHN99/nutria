@@ -15,10 +15,11 @@ npm run build        # Compile to build/ directory using tsup
 npm start            # Run compiled output (for production)
 ```
 
-**Database Migrations (TypeORM):**
+**Database Migrations & Seed:**
 ```bash
-npm run typeorm migration:generate -- src/database/migrations/MyMigrationName
-npm run typeorm migration:run
+npm run db:migrate          # Run pending migrations
+npm run db:migrate:revert   # Revert last migration
+npm run db:seed             # Populate verified foods (idempotent)
 ```
 
 ## Environment Setup
@@ -156,6 +157,47 @@ The ChatBot feature calls OpenAI's API:
 - Service layer handles API calls
 - Use `OPEN_AI_API_KEY` from env
 - Ensure chat payloads match current OpenAI API schema
+
+## Project Structure
+
+```
+backend/
+├── src/
+│   ├── app/                 # Application logic
+│   │   ├── controllers/     # HTTP request handlers
+│   │   ├── services/        # Business logic
+│   │   ├── repositories/    # Database access layer
+│   │   ├── entities/        # TypeORM models
+│   │   ├── rotas/           # Express routes
+│   │   └── schemas/         # Zod validation schemas
+│   ├── database/
+│   │   ├── data-source.ts   # TypeORM config & initialization
+│   │   ├── migrations/      # TypeORM migration files
+│   │   └── seed.ts          # Seed script for initial data
+│   ├── config/              # Environment & constants
+│   └── utils/               # Shared utilities
+├── data/
+│   └── seeds/               # CSV files for database seeding
+├── build/                   # Compiled output (git-ignored)
+└── package.json
+```
+
+## Database Seeding
+
+**Setup:**
+1. Run migrations: `npm run db:migrate`
+2. Seed with verified foods: `npm run db:seed`
+
+**The Seed Script:**
+- Location: `src/database/seed.ts`
+- Data source: `data/seeds/*.csv` (1607 foods + nutrition tables)
+- Idempotent: checks if already seeded; skips if found
+- Batch insert: 200 records per transaction for performance
+- CSV parser: handles quoted fields and special characters (commas in names)
+
+**To reseed after modifications:**
+1. Delete seed records manually or via SQL
+2. Rerun `npm run db:seed`
 
 ## Domains (Entity Groups)
 

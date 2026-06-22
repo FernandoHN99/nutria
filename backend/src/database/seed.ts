@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 import { AppDataSource } from './data-source';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const CSV_DIR = path.join(__dirname, '../../../helper/tratativa-alimentos');
+const CSV_DIR = path.join(__dirname, '../../data/seeds');
 const BATCH_SIZE = 200;
 
 function parseCSVLine(line: string): string[] {
