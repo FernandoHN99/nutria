@@ -29,8 +29,8 @@ NutrIA é um aplicativo inteligente para contabilização de calorias e acompanh
 ### Pré-requisitos
 - Node.js
 - NPM
+- Docker (para rodar o PostgreSQL localmente)
 - Expo (não é necessário instalar globalmente, o projeto usa npx expo)
-- Conta no Supabase
 - Conta na OpenAI
 
 ### Passos
@@ -48,13 +48,21 @@ NutrIA é um aplicativo inteligente para contabilização de calorias e acompanh
    ```bash
    cd backend
    ```
-2. Preencha o arquivo .env com as credenciais necessárias. Um arquivo de exemplo (.env) está disponível no projeto para referência. Atualize as informações de acordo com suas credenciais do Supabase e da OpenAI.
+2. Suba o banco de dados com Docker (a partir da raiz do projeto):
+   ```bash
+   docker compose up -d
+   ```
+3. Preencha o arquivo `.env` com as credenciais necessárias. As variáveis de conexão ao PostgreSQL já estão pré-configuradas para o Docker local. Adicione apenas a `OPEN_AI_API_KEY` do seu serviço OpenAI.
 
-3. Instale as dependências:
+4. Instale as dependências:
    ```bash
    npm install
    ```
-4. Inicie o servidor:
+5. Execute as migrations para criar as tabelas do banco de dados:
+   ```bash
+   npm run db:migrate
+   ```
+6. Inicie o servidor:
    ```bash
    npm start
    ```

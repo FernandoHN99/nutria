@@ -23,7 +23,7 @@ export const AppDataSource = new DataSource({
    username: USUARIO,
    password: SENHA,
    database: DATABASE,
-   synchronize: process.env.DB_SYNC === 'true',
+   synchronize: false,
    logging: false,
    entities: [
     AlimentoConsumido,
@@ -40,6 +40,6 @@ export const AppDataSource = new DataSource({
     Usuario,
     CodigoDeBarras
   ],
-   migrations: [],
+   migrations: ['src/database/migrations/*.ts'],
    subscribers: [],
 })
