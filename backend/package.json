@@ -41,6 +41,7 @@
       "typeorm": "tsx ./node_modules/typeorm/cli.js",
       "db:migrate": "tsx ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
       "db:migrate:revert": "tsx ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts",
+      "db:seed": "tsx src/database/seed.ts",
       "build": "tsup src --out-dir build"
    }
 }
