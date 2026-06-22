@@ -62,7 +62,11 @@ NutrIA é um aplicativo inteligente para contabilização de calorias e acompanh
    ```bash
    npm run db:migrate
    ```
-6. Inicie o servidor:
+6. Popule o banco com os alimentos verificados:
+   ```bash
+   npm run db:seed
+   ```
+7. Inicie o servidor:
    ```bash
    npm start
    ```

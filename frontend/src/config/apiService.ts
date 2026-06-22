@@ -2,6 +2,8 @@ import axios from 'axios';
 import { URL_BACKEND, TOKEN_KEY, REFRESH_KEY ,listaRotasSemAuth} from './variaveis';
 import { setTokensStorage, getTokensStorage } from '../api/httpState/usuarioAuth';
 
+console.log('🔌 API URL:', URL_BACKEND);
+
 const api = axios.create({
    baseURL: URL_BACKEND,
    timeout: 20000,
@@ -14,9 +16,11 @@ api.interceptors.request.use(
       if (token) {
          config.headers.Authorization = `Bearer ${token}`;
       }
+      console.log('📤 Requisição:', config.method?.toUpperCase(), config.url);
       return config;
    },
    (error) => {
+      console.error('❌ Erro na requisição:', error);
       return Promise.reject(error);
    }
 );
@@ -46,8 +50,12 @@ const refreshAuthTokens = async () => {
 };
 
 api.interceptors.response.use(
-   (response) => response,
+   (response) => {
+      console.log('✅ Resposta:', response.status, response.config.url);
+      return response;
+   },
    async (error) => {
+      console.error('❌ Erro na resposta:', error.response?.status || 'Sem status', error.config?.url, error.message);
       const originalRequest = error.config;
       if(!listaRotasSemAuth.includes(originalRequest.url)){
          if (error.response && error.response.status === 401 && !originalRequest._retry) {

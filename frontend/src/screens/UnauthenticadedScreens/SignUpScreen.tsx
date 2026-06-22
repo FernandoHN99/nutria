@@ -54,7 +54,13 @@ const SignUpScreen = ({ navigation }: { navigation: any}) => {
    });
 
    const handleSignUp = async () => {
-      await fazerSignUpServiceFn(answers);
+      console.log('📝 SignUp iniciado com dados:', answers);
+      try {
+         const result = await fazerSignUpServiceFn(answers);
+         console.log('✅ SignUp sucesso:', result);
+      } catch (err) {
+         console.error('❌ SignUp erro:', err);
+      }
    }
 
    useEffect(() => {
@@ -72,6 +78,13 @@ const SignUpScreen = ({ navigation }: { navigation: any}) => {
       }
 
    }, [step]);
+
+   useEffect(() => {
+      if (error) {
+         Alert.alert('Erro', 'Ocorreu um erro ao criar a sua conta. Tente novamente mais tarde.');
+         navigation.replace('Boas-Vindas');
+      }
+   }, [error]);
 
    const nextQuestion = (userAnswer: any) => {
       setLoadingChatbot(true);
@@ -98,13 +111,8 @@ const SignUpScreen = ({ navigation }: { navigation: any}) => {
 
    const FlowSignUpInstance = FlowSignUp(nextQuestion, answers?.password)
 
-   if (loading) { 
+   if (loading) {
       return <LoadingScreen loadingMessage='Criando a sua conta...'/>
-   }
-
-   if(error) {
-      Alert.alert('Erro', 'Ocorreu um erro ao criar a sua conta. Tente novamente mais tarde.');
-      navigation.replace('Boas-Vindas');
    }
 
    return (
