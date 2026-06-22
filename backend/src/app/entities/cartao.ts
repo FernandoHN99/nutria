@@ -10,7 +10,7 @@ export default class Cartao extends BaseEntity {
    @PrimaryColumn('text')
    tipo_cartao: string
 
-   @Column('timestamp')
+   @Column({ type: 'timestamp', nullable: true })
    dtt_interacao_cartao: string | null
 
    @ManyToOne(() => Usuario, (usuario) => usuario.cartoes)

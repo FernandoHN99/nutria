@@ -1,37 +1,54 @@
 import UsuarioRepositorio from '../repositories/usuarioRepositorio';
+import ContaRepositorio from '../repositories/contaRepositorio';
 import Usuario from '../entities/usuario';
-import { API_EXTERNAL_URL, SERVICE_KEY }  from '../../config/variaveis'
+import Conta from '../entities/conta';
+import { JWT_SECRET, REFRESH_SECRET } from '../../config/variaveis';
 import { criarUsuarioObject } from '../schemas/usuario/criarUsuarioSchema';
 import { atualizarUsuarioDadosObject } from '../schemas/usuario/atualizarUsuarioDadosSchema';
 import { atualizarUsuarioContaObject } from '../schemas/usuario/atualizarUsuarioContaSchema';
 import { efetuarLoginObject } from '../schemas/usuario/efetuarLoginSchema';
-import { createClient } from '@supabase/supabase-js'
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { JsonReponseErro } from '../../utils/jsonReponses';
 import Eventos from '../../utils/eventos';
-export default class UsuarioService{
+
+export default class UsuarioService {
 
    private usuarioRepo: UsuarioRepositorio;
-   private clienteSupabase: any;
+   private contaRepo: ContaRepositorio;
 
    constructor() {
       this.usuarioRepo = new UsuarioRepositorio();
+      this.contaRepo = new ContaRepositorio();
    }
 
    public async obterUsuarioPorID(usuarioID: string): Promise<Usuario> {
-      let usuarioRetornado = await this.usuarioRepo.obterUsuarioPorID(usuarioID);
-      if(!usuarioRetornado){
+      const usuarioRetornado = await this.usuarioRepo.obterUsuarioPorID(usuarioID);
+      if (!usuarioRetornado) {
          JsonReponseErro.lancar(404, 'Usuário não encontrado');
       }
       return usuarioRetornado!;
    }
 
-   public async obterContaPorID(contaId: string): Promise<any> {
-      this.setClienteSupabase()
-      const { data, error } = await this.clienteSupabase.auth.admin.getUserById(contaId);
-      if(error || !data?.user?.id || !data?.user?.identities[0]?.email){
+   public async obterContaPorID(contaId: string): Promise<{ id: string; email: string }> {
+      const conta = await this.contaRepo.obterContaPorID(contaId);
+      if (!conta) {
          JsonReponseErro.lancar(404, 'Conta não encontrada');
       }
-      return { id: data.user.id, email: data.user.identities[0].email }
+      return { id: conta!.id, email: conta!.email };
+   }
+
+   public async criarConta(criarContaJSON: criarUsuarioObject): Promise<{ id: string; email: string }> {
+      const contaExistente = await this.contaRepo.obterContaPorEmail(criarContaJSON.email);
+      if (contaExistente) {
+         JsonReponseErro.lancar(409, 'Email já cadastrado');
+      }
+      const senha_hash = await bcrypt.hash(criarContaJSON.password, 10);
+      const novaConta = new Conta();
+      novaConta.email = criarContaJSON.email;
+      novaConta.senha_hash = senha_hash;
+      const contaCriada = await this.contaRepo.inserirConta(novaConta);
+      return { id: contaCriada.id, email: contaCriada.email };
    }
 
    public async criarUsuario(id_conta: string, dadosUsuario: criarUsuarioObject): Promise<Usuario> {
@@ -42,59 +59,53 @@ export default class UsuarioService{
       return novoUsuario;
    }
 
-   public async criarConta(criarContaJSON: criarUsuarioObject): Promise<any> {
-      this.setClienteSupabase()
-      const { data, error } = await this.clienteSupabase.auth.admin.createUser({  
-            ...criarContaJSON,  
-            email_confirm: true
-         });
-      if(error || !data?.user?.id){
-         if(error?.code.includes('email_exists')){
-            JsonReponseErro.lancar(409, 'Email já cadastrado');
-         }
-         JsonReponseErro.lancar(500, 'Erro ao criar conta do usuário', error);
-      }
-      return data.user;
-   }
-
-   public async atualizarUsuarioDados(novosDadosUsuario: atualizarUsuarioDadosObject): Promise<any>{
-      let usuario = await this.obterUsuarioPorID(novosDadosUsuario.id_usuario);
+   public async atualizarUsuarioDados(novosDadosUsuario: atualizarUsuarioDadosObject): Promise<any> {
+      const usuario = await this.obterUsuarioPorID(novosDadosUsuario.id_usuario);
       usuario.atualizarDados(novosDadosUsuario);
       return await usuario.save();
    }
 
-   public async atualizarUsuarioConta(novosDadosContaUsuario: atualizarUsuarioContaObject): Promise<{email: any}>{
-      this.setClienteSupabase()
-      const { data, error } = await this.clienteSupabase.auth.admin.updateUserById(
-         novosDadosContaUsuario.id_usuario, { ...novosDadosContaUsuario});
-      if(error || !data?.user?.id || !data?.user?.identities[0]?.email){
-         JsonReponseErro.lancar(500, 'Erro ao atualizar conta do usuário', error);
+   public async atualizarUsuarioConta(novosDadosContaUsuario: atualizarUsuarioContaObject): Promise<{ email: string }> {
+      const conta = await this.contaRepo.obterContaPorID(novosDadosContaUsuario.id_usuario);
+      if (!conta) {
+         JsonReponseErro.lancar(404, 'Conta não encontrada');
       }
-      return { email: data.user.identities[0].email };
+      const atualizacao: Partial<Pick<Conta, 'email' | 'senha_hash'>> = {};
+      if (novosDadosContaUsuario.email) {
+         atualizacao.email = novosDadosContaUsuario.email;
+      }
+      if (novosDadosContaUsuario.password) {
+         atualizacao.senha_hash = await bcrypt.hash(novosDadosContaUsuario.password, 10);
+      }
+      await this.contaRepo.atualizarConta(novosDadosContaUsuario.id_usuario, atualizacao);
+      return { email: atualizacao.email ?? conta!.email };
    }
 
-   public async fazerLogin(loginJSON: efetuarLoginObject): Promise<any>  {
-      this.setClienteSupabase()
-      const { data, error } = await this.clienteSupabase.auth.signInWithPassword(loginJSON);
-      if(error || !data?.session){
+   public async fazerLogin(loginJSON: efetuarLoginObject): Promise<any> {
+      const conta = await this.contaRepo.obterContaPorEmail(loginJSON.email);
+      if (!conta) {
          JsonReponseErro.lancar(401, 'Credenciais inválidas');
       }
-      return data.session;
-   }
-
-   public async obterNovoTokenAcesso(refreshToken: string): Promise<any>  {
-      this.setClienteSupabase()
-      const { data, error } = await this.clienteSupabase.auth.refreshSession({ refresh_token: refreshToken })
-      if(error || !data?.session){
-         JsonReponseErro.lancar(401, 'Token não autorizado', error);
+      const senhaCorreta = await bcrypt.compare(loginJSON.password, conta!.senha_hash);
+      if (!senhaCorreta) {
+         JsonReponseErro.lancar(401, 'Credenciais inválidas');
       }
-      return data.session;
+      const access_token = jwt.sign({ sub: conta!.id }, JWT_SECRET, { expiresIn: '1h' });
+      const refresh_token = jwt.sign({ sub: conta!.id }, REFRESH_SECRET, { expiresIn: '7d' });
+      return { access_token, refresh_token, token_type: 'bearer', expires_in: 3600 };
    }
 
-   private setClienteSupabase(){
-      this.clienteSupabase = createClient(API_EXTERNAL_URL, SERVICE_KEY);
+   public async obterNovoTokenAcesso(refreshToken: string): Promise<any> {
+      let decoded: jwt.JwtPayload;
+      try {
+         decoded = jwt.verify(refreshToken, REFRESH_SECRET) as jwt.JwtPayload;
+      } catch {
+         JsonReponseErro.lancar(401, 'Token não autorizado');
+         return;
+      }
+      const access_token = jwt.sign({ sub: decoded.sub }, JWT_SECRET, { expiresIn: '1h' });
+      const new_refresh_token = jwt.sign({ sub: decoded.sub }, REFRESH_SECRET, { expiresIn: '7d' });
+      return { access_token, refresh_token: new_refresh_token, token_type: 'bearer', expires_in: 3600 };
    }
-   
+
 }
-
-

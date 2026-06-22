@@ -8,10 +8,8 @@ export const DATABASE: string = process.env.DB_DATABASE ?? '';
 export const SENHA: string = process.env.DB_SENHA ?? '';
 export const PORTA_DB: number = process.env.DB_PORTA ? parseInt(process.env.DB_PORTA) : 0;
 
-export const ANON_KEY: string = process.env.ANON_KEY ?? '';
-export const SERVICE_KEY: string = process.env.SERVICE_KEY ?? '';
-export const API_EXTERNAL_URL: string = process.env.API_EXTERNAL_URL ?? '';
 export const JWT_SECRET: string = process.env.JWT_SECRET ?? '';
+export const REFRESH_SECRET: string = process.env.REFRESH_SECRET ?? '';
 
 export const OPEN_AI_API_KEY: string = process.env.OPEN_AI_API_KEY ?? '';
 
