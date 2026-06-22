@@ -41,7 +41,7 @@
       "db:migrate:revert": "tsx ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts",
       "db:seed": "tsx src/database/seed.ts",
       "build": "tsup src --out-dir build && mkdir -p build/data/seeds && cp data/seeds/*.csv build/data/seeds/",
-      "render:build": "npm install --include=dev && npm run db:migrate && npm run db:seed && npm run build",
+      "render:build": "npm install --legacy-peer-deps --include=dev && npm run db:migrate && npm run db:seed && npm run build",
       "render:start": "node build/app.js"
    }
 }
