@@ -37,10 +37,14 @@
    },
    "scripts": {
       "start": "tsx src/app.ts",
+      "start:prod": "node build/app.js",
       "dev": "NODE_NO_WARNINGS=1 tsx watch src/app.ts",
       "typeorm": "tsx ./node_modules/typeorm/cli.js",
       "db:migrate": "tsx ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
       "db:migrate:revert": "tsx ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts",
-      "build": "tsup src --out-dir build"
+      "db:seed": "tsx src/database/seed.ts",
+      "build": "tsup src --out-dir build",
+      "render:build": "npm install && npm run db:migrate && npm run build",
+      "render:start": "node build/app.js"
    }
 }
