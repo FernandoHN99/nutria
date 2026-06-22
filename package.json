@@ -1,0 +1,35 @@
+{
+  "name": "nutria",
+  "version": "1.0.0",
+  "description": "NutrIA - Nutrition Tracking App with AI Chatbot",
+  "private": true,
+  "engines": {
+    "node": "23.7.0"
+  },
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "npm -w backend run dev & npm -w frontend run start",
+    "dev:backend": "npm -w backend run dev",
+    "dev:frontend": "npm -w frontend run start",
+    "build": "npm -w backend run build && npm -w frontend run build",
+    "build:backend": "npm -w backend run build",
+    "build:frontend": "npm -w frontend run build",
+    "clean": "rm -rf node_modules backend/node_modules frontend/node_modules build dist",
+    "backend:start": "npm -w backend run start",
+    "backend:seed": "npm -w backend run db:seed",
+    "backend:migrate": "npm -w backend run db:migrate",
+    "backend:migrate:revert": "npm -w backend run db:migrate:revert"
+  },
+  "keywords": [
+    "nutrition",
+    "tracking",
+    "chatbot",
+    "ai",
+    "health"
+  ],
+  "author": "Fernando Henriques",
+  "license": "MIT"
+}

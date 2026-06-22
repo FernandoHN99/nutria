@@ -1,11 +1,8 @@
 {
    "name": "backend",
    "version": "0.0.1",
-   "description": "Awesome project developed with TypeORM.",
+   "description": "NutrIA Backend API - Express + TypeORM",
    "type": "commonjs",
-   "engines": {
-      "node": "23.7.0"
-   },
    "devDependencies": {
       "@types/axios": "^0.14.0",
       "@types/bcryptjs": "^2.4.6",

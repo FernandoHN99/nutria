@@ -2,17 +2,23 @@ import 'dotenv/config';
 
 export const PORTA_BACKEND: number = 5001;
 export const DOMINIO_BACKEND: string = 'http://127.0.0.1';
-export const DATABASE_URL: string = process.env.DATABASE_URL ?? '';
-export const USUARIO: string = process.env.DB_USUARIO ?? '';
-export const HOST: string = process.env.DB_HOST ?? '';
-export const DATABASE: string = process.env.DB_DATABASE ?? '';
-export const SENHA: string = process.env.DB_SENHA ?? '';
-export const PORTA_DB: number = process.env.DB_PORTA ? parseInt(process.env.DB_PORTA) : 0;
 
-export const JWT_SECRET: string = process.env.JWT_SECRET ?? '';
-export const REFRESH_SECRET: string = process.env.REFRESH_SECRET ?? '';
+// Production database URL (Render/Neon) takes precedence
+export const DATABASE_URL: string = process.env.BACKEND_DATABASE_URL ?? '';
 
-export const OPEN_AI_API_KEY: string = process.env.OPEN_AI_API_KEY ?? '';
+// Development database configuration (Docker)
+export const USUARIO: string = process.env.BACKEND_DB_USUARIO ?? '';
+export const HOST: string = process.env.BACKEND_DB_HOST ?? '';
+export const DATABASE: string = process.env.BACKEND_DB_DATABASE ?? '';
+export const SENHA: string = process.env.BACKEND_DB_SENHA ?? '';
+export const PORTA_DB: number = process.env.BACKEND_DB_PORTA ? parseInt(process.env.BACKEND_DB_PORTA) : 0;
+
+// Authentication
+export const JWT_SECRET: string = process.env.BACKEND_JWT_SECRET ?? '';
+export const REFRESH_SECRET: string = process.env.BACKEND_REFRESH_SECRET ?? '';
+
+// OpenAI
+export const OPEN_AI_API_KEY: string = process.env.BACKEND_OPEN_AI_API_KEY ?? '';
 
 
 export const tiposDeCartao: Array<string> = ['MACROS', 'CALORIAS', 'DIETA FLEXIVEL'];

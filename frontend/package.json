@@ -1,6 +1,7 @@
 {
   "name": "frontend",
   "version": "1.0.0",
+  "description": "NutrIA Frontend - React Native with Expo",
   "main": "expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
