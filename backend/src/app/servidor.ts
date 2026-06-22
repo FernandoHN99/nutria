@@ -80,7 +80,7 @@ export default class Servidor {
       AppDataSource.initialize().then(async () => {
          console.log('Banco de dados: Ativo');
          this.app.listen({
-          host: 'RENDER' in process.env ? '0.0.0.0' : 'localhost',
+          host: '0.0.0.0',
           port: this.porta,
           },
         () => console.log(`Servidor (${this.porta}): Ativo`)

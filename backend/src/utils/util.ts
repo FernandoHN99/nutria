@@ -11,6 +11,7 @@ export default class Util {
             responseSucesso = await funcao.bind(context)(req, res, next);
             res.status(responseSucesso.codigo).json(responseSucesso);
          } catch (erro: any) {
+            console.log('erro: ', erro)
             if (erro instanceof JsonReponseErro) {
                res.status(erro.codigo).json(erro);
             } else {
