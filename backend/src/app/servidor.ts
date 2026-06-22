@@ -79,11 +79,12 @@ export default class Servidor {
    private iniciarServicos(): void {
       AppDataSource.initialize().then(async () => {
          console.log('Banco de dados: Ativo');
+         const port = process.env.PORT ? parseInt(process.env.PORT) : this.porta;
          this.app.listen({
           host: '0.0.0.0',
-          port: this.porta,
+          port: port,
           },
-        () => console.log(`Servidor (${this.porta}): Ativo`)
+        () => console.log(`Servidor (${port}): Ativo`)
       );
           
       }).catch((erro) => {

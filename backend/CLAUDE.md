@@ -24,23 +24,30 @@ npm run db:seed             # Populate verified foods (idempotent)
 
 ## Environment Setup
 
-Create `.env` in `backend/` with:
+### Local Development
+Create `.env` in `backend/` with PostgreSQL credentials:
 ```
 DB_USUARIO=postgres
-DB_HOST=db.example.com
+DB_HOST=localhost
 DB_DATABASE=nutria
-DB_SENHA=yourpassword
+DB_SENHA=nutria
 DB_PORTA=5432
 
 JWT_SECRET=your-secret-key
 OPEN_AI_API_KEY=sk-...
-
-ANON_KEY=supabase-anon-key        (optional, for direct client access)
-SERVICE_KEY=supabase-service-key  (optional)
-API_EXTERNAL_URL=https://api.example.com
 ```
 
-Port: Backend runs on **port 5001** (hardcoded in `config/variaveis.ts`).
+### Production (Neon/Render)
+Use single `DATABASE_URL`:
+```
+DATABASE_URL=postgresql://user:password@host/database
+JWT_SECRET=your-secret-key
+OPEN_AI_API_KEY=sk-...
+```
+
+**See `.env.example` for complete reference.**
+
+Port: Backend runs on **port 5001** locally (hardcoded in `config/variaveis.ts`); on Render, uses `PORT` env var if set.
 
 ## Code Architecture
 
