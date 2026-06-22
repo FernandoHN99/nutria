@@ -12,7 +12,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.rickkelman.nutria",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -27,11 +31,11 @@
     "plugins": [
       "expo-font"
     ],
+    "owner": "rickkelman",
     "extra": {
       "eas": {
-        "projectId": "2a2c5de7-94ec-4bc6-a4de-1da7954f52e1"
+        "projectId": "fe1f52b4-8995-49d3-a54b-3120684ef7cc"
       }
-    },
-    "owner": "nutria2024"
+    }
   }
 }
