@@ -22,8 +22,8 @@
     "backend:seed": "npm -w backend run db:seed",
     "backend:migrate": "npm -w backend run db:migrate",
     "backend:migrate:revert": "npm -w backend run db:migrate:revert",
-    "render:build": "npm install --legacy-peer-deps && npm -w backend run db:migrate && npm -w backend run db:seed && npm -w backend run build",
-    "render:start": "node backend/build/app.js"
+    "render:build": "npm install --legacy-peer-deps && npm -w backend run build",
+    "render:start": "npm -w backend run db:migrate && npm -w backend run db:seed && node backend/build/app.js"
   },
   "keywords": [
     "nutrition",
