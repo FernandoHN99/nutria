@@ -46,8 +46,6 @@ export const AppDataSource = new DataSource({
     Usuario,
     CodigoDeBarras
   ],
-   migrations: process.env.NODE_ENV === 'production' 
-     ? ['database/migrations/*.js']
-     : ['src/database/migrations/*.ts'],
+   migrations: ['database/migrations/*.js'],
    subscribers: [],
 })
