@@ -26,8 +26,6 @@ const databaseConfig: any = DATABASE_URL
       database: DATABASE,
     }
 
-const isDev = process.env.NODE_ENV !== 'production'
-
 export const AppDataSource = new DataSource({
    type: 'postgres',
    ...databaseConfig,
@@ -48,6 +46,6 @@ export const AppDataSource = new DataSource({
     Usuario,
     CodigoDeBarras
   ],
-   migrations: isDev ? ['src/database/migrations/*.ts'] : ['database/migrations/*.js'],
+   migrations: ['database/migrations/*.js'],
    subscribers: [],
 })
