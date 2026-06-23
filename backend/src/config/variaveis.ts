@@ -23,7 +23,7 @@ export const OPEN_AI_API_KEY: string = process.env.BACKEND_OPEN_AI_API_KEY ?? ''
 
 export const tiposDeCartao: Array<string> = ['MACROS', 'CALORIAS', 'DIETA FLEXIVEL'];
 export const listaNomeRefeicoesBase: Array<string> = ['Café', 'Almoço', 'Jantar', 'Lanche'];
-export const listaRotasSemAuth: Array<string> = ['/nutria/usuario/criar', '/nutria/usuario/login', '/nutria/usuario/refresh-token'];
+export const listaRotasSemAuth: Array<string> = ['/nutria/health', '/nutria/usuario/criar', '/nutria/usuario/login', '/nutria/usuario/refresh-token'];
 export const listaEstadosAlimentos: Array<string> = ['PADRAO', 'CRU', 'COZIDO', 'GRELHADO', 'ASSADO', 'REFOGADO', 'FRITO'];
 export const listaUnidadesMedida: Array<string> = ['GRAMA', 'MILILITRO', 'COLHER SOPA', 'COLHER CHA', 'XICARA PADRAO', 'XICARA CHA', 'XICARA CAFE', 'UNIDADE'];
 export const listaSexosBiologicos: Array<string> = ['H', 'M'];

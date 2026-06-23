@@ -9,6 +9,7 @@ import AlimentoRotas from './app/rotas/alimentoRotas';
 import CartaoRotas from './app/rotas/cartaoRotas';
 import ChatBotRotas from './app/rotas/chatBotRotas';
 import DiaRotas from './app/rotas/diaRotas';
+import HealthRotas from './app/rotas/healthRotas';
 import PerfilRotas from './app/rotas/perfilRotas';
 import PratoRotas from './app/rotas/pratoRotas';
 import RefeicaoRotas from './app/rotas/refeicaoRotas';
@@ -24,6 +25,7 @@ const listaRotas: Rota[] = [
   new CartaoRotas(),
   new ChatBotRotas(),
   new DiaRotas(),
+  new HealthRotas(),
   new PerfilRotas(),
   new PratoRotas(),
   new RefeicaoRotas(),
