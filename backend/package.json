@@ -34,9 +34,8 @@
       "zod": "^3.22.5"
    },
    "scripts": {
-      "start": "tsx src/app.ts",
-      "start:prod": "node build/app.js",
-      "dev": "NODE_NO_WARNINGS=1 tsx watch src/app.ts",
+      "start:dev": "NODE_NO_WARNINGS=1 tsx watch src/app.ts",
+      "start": "node build/app.js",
       "typeorm": "tsx ./node_modules/typeorm/cli.js",
       "db:migrate": "tsx ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
       "db:migrate:revert": "tsx ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts",
