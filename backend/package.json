@@ -37,8 +37,8 @@
       "start:dev": "NODE_NO_WARNINGS=1 tsx watch src/app.ts",
       "start": "node build/app.js",
       "typeorm": "tsx ./node_modules/typeorm/cli.js",
-      "db:migrate": "tsx ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
-      "db:migrate:revert": "tsx ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts",
+      "db:migrate": "npx tsx src/database/run-migrations.ts",
+      "db:migrate:revert": "npx tsx src/database/run-migrations-revert.ts",
       "db:seed": "tsx src/database/seed.ts",
       "build": "tsup src --out-dir build && mkdir -p build/data/seeds && cp data/seeds/*.csv build/data/seeds/"
    }
