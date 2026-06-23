@@ -1,7 +1,5 @@
-import { BACKEND_URL, BACKEND_PORTA } from '@env';
-
-export const DOMINIO_BACKEND: string = String(BACKEND_URL ?? '').replace(/\/$/, '');
-export const PORTA_BACKEND: string = String(BACKEND_PORTA ?? '').trim();
+export const DOMINIO_BACKEND: string = String(process.env.EXPO_PUBLIC_BACKEND_URL ?? '').replace(/\/$/, '');
+export const PORTA_BACKEND: string = String(process.env.EXPO_PUBLIC_BACKEND_PORTA ?? '').trim();
 export const ENDPOINT: string = '/nutria'
 export const URL_BACKEND: string = `${DOMINIO_BACKEND}${PORTA_BACKEND ? `:${PORTA_BACKEND}` : ''}${ENDPOINT}`
 export const TOKEN_KEY = 'authToken';
