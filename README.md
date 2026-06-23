@@ -26,13 +26,6 @@ NutrIA é um aplicativo inteligente para contabilização de calorias e acompanh
 
 ## 🚀 Instalação e Configuração
 
-### Geração de Secrets
-Para gerar JWT secrets seguros, execute no terminal:
-```bash
-node -e "console.log(require('crypto').randomBytes(64).toString('base64'))"
-```
-Cole o resultado em `BACKEND_JWT_SECRET` e `BACKEND_REFRESH_SECRET` no `.env`.
-
 ### Pré-requisitos
 - Node.js
 - NPM
@@ -57,6 +50,13 @@ Cole o resultado em `BACKEND_JWT_SECRET` e `BACKEND_REFRESH_SECRET` no `.env`.
    ```
 
 #### 3. Backend
+
+0. Gere as JWT secrets seguros, execute no terminal:
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(64).toString('base64'))"
+   ```
+   Guarde o resultado para usar no `BACKEND_JWT_SECRET` e `BACKEND_REFRESH_SECRET` mais a frente.
+
 1. Suba o banco de dados com Docker:
    ```bash
    docker compose up -d
@@ -74,6 +74,7 @@ Cole o resultado em `BACKEND_JWT_SECRET` e `BACKEND_REFRESH_SECRET` no `.env`.
 3. **Para Desenvolvimento Local:**
    - Use `backend/.env.local` (já pré-configurado para Docker)
    - As credenciais padrão são: `usuario: nutria`, `senha: nutria`, `database: nutria`
+   - Configure `BACKEND_JWT_SECRET` e `BACKEND_REFRESH_SECRET` com valores seguros
    - Adicione apenas `BACKEND_OPEN_AI_API_KEY` se for usar o chatbot
 
 4. **Para Produção (Render/Neon):**
