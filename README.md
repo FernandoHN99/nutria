@@ -26,6 +26,13 @@ NutrIA é um aplicativo inteligente para contabilização de calorias e acompanh
 
 ## 🚀 Instalação e Configuração
 
+### Geração de Secrets
+Para gerar JWT secrets seguros, execute no terminal:
+```bash
+node -e "console.log(require('crypto').randomBytes(64).toString('base64'))"
+```
+Cole o resultado em `BACKEND_JWT_SECRET` e `BACKEND_REFRESH_SECRET` no `.env`.
+
 ### Pré-requisitos
 - Node.js
 - NPM
@@ -54,34 +61,62 @@ NutrIA é um aplicativo inteligente para contabilização de calorias e acompanh
    ```bash
    docker compose up -d
    ```
-2. Crie o env do backend a partir do exemplo:
+
+2. Crie os arquivos de ambiente:
    ```bash
+   # Para desenvolvimento local (com Docker)
+   cp backend/.env.local.example backend/.env.local
+   
+   # Para produção (usando DATABASE_URL)
    cp backend/.env.example backend/.env
    ```
-3. Preencha o `backend/.env` com as credenciais necessárias. As variáveis de conexão ao PostgreSQL já estão pré-configuradas para o Docker local. Adicione apenas a `BACKEND_OPEN_AI_API_KEY` se for usar o chatbot.
 
-4. Execute as migrations para criar as tabelas do banco de dados:
+3. **Para Desenvolvimento Local:**
+   - Use `backend/.env.local` (já pré-configurado para Docker)
+   - As credenciais padrão são: `usuario: nutria`, `senha: nutria`, `database: nutria`
+   - Adicione apenas `BACKEND_OPEN_AI_API_KEY` se for usar o chatbot
+
+4. **Para Produção (Render/Neon):**
+   - Use `backend/.env` 
+   - Preencha `BACKEND_DATABASE_URL` com a string de conexão do seu banco em produção
+   - Configure `BACKEND_JWT_SECRET` e `BACKEND_REFRESH_SECRET` com valores seguros
+
+5. Execute as migrations para criar as tabelas do banco de dados:
    ```bash
    npm run backend:migrate
    ```
-5. Popule o banco com os alimentos verificados:
+
+6. Popule o banco com os alimentos verificados:
    ```bash
    npm run backend:seed
    ```
-6. Inicie o servidor:
+
+7. Inicie o servidor:
    ```bash
    npm run dev:backend
    ```
 
 #### 4. Frontend
-1. Crie o env do frontend a partir do exemplo:
+1. Crie o arquivo de ambiente:
    ```bash
    cp frontend/.env.example frontend/.env
    ```
-2. Atualize o `frontend/.env` com as informações apontadas ao backend.
-   > **Observação:** para usar o Expo em múltiplos dispositivos, substitua `localhost` pelo IP da máquina que hospeda o backend.
 
-3. Inicie o aplicativo com o Expo pela raiz do projeto:
+2. Configure o `frontend/.env` com o endereço do backend:
+   ```env
+   BACKEND_URL=http://localhost
+   BACKEND_PORTA=5001
+   ```
+
+   > **Observação para Múltiplos Dispositivos:**
+   > Se estiver testando em um dispositivo físico (não no simulador), substitua `localhost` pelo **IP local da máquina** que hospeda o backend:
+   > ```env
+   > BACKEND_URL=http://192.168.1.100  # Seu IP local
+   > BACKEND_PORTA=5001
+   > ```
+   > Para descobrir seu IP: `ifconfig` (Mac/Linux) ou `ipconfig` (Windows)
+
+3. Inicie o aplicativo com o Expo:
    ```bash
    npm run dev:frontend
    ```
