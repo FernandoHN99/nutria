@@ -1,11 +1,10 @@
 import 'reflect-metadata';
 import * as fs from 'fs';
 import * as path from 'path';
-import { fileURLToPath } from 'url';
 import { AppDataSource } from './data-source';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const CSV_DIR = path.join(__dirname, '../../data/seeds');
+const seedDataDir = path.extname(process.argv[1] ?? '') === '.js' ? 'build/data/seeds' : 'data/seeds';
+const CSV_DIR = path.join(process.cwd(), seedDataDir);
 const BATCH_SIZE = 200;
 
 function parseCSVLine(line: string): string[] {

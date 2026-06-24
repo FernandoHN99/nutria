@@ -1,22 +1,19 @@
 {
   "expo": {
-    "name": "frontend",
+    "name": "nutria",
     "slug": "nutria",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.rickkelman.nutria",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
@@ -27,15 +24,10 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "entryPoint": "./App.tsx",
     "plugins": [
+      "@react-native-community/datetimepicker",
+      "expo-asset",
       "expo-font"
-    ],
-    "owner": "rickkelman",
-    "extra": {
-      "eas": {
-        "projectId": "fe1f52b4-8995-49d3-a54b-3120684ef7cc"
-      }
-    }
+    ]
   }
 }

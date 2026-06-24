@@ -19,8 +19,11 @@ const PieChartOutline = ({listValues, listColors, sizeChart, thickness, backgrou
       <View style={styles.container}>
          <PieChart
             widthAndHeight={sizeChart}
-            series={checkListZero ? [1] : listValues}
-            sliceColor={checkListZero ? [hexToRgba(theme.colors.black, '0.2')] : listColors}
+            series={
+               checkListZero
+                  ? [{ value: 1, color: hexToRgba(theme.colors.black, '0.2') }]
+                  : listValues.map((value, i) => ({ value, color: listColors[i] }))
+            }
             coverRadius={thickness}
             coverFill={backgroundColor}
          />
