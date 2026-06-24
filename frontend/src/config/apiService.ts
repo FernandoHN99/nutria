@@ -1,6 +1,7 @@
 import axios from 'axios';
-import { URL_BACKEND, TOKEN_KEY, REFRESH_KEY ,listaRotasSemAuth} from './variaveis';
+import { URL_BACKEND, listaRotasSemAuth } from './variaveis';
 import { setTokensStorage, getTokensStorage } from '../api/httpState/usuarioAuth';
+import { queryClient } from '../lib/react-query';
 
 console.log('🔌 API URL:', URL_BACKEND);
 
@@ -9,6 +10,31 @@ const api = axios.create({
    timeout: 20000,
    headers: { 'Content-Type': 'application/json' },
 });
+
+let refreshPromise: Promise<{ token: string; refreshToken: string }> | null = null;
+let isLoggingOut = false;
+
+const isRotaSemAuth = (url?: string) => {
+   if (!url) return false;
+   return listaRotasSemAuth.some((rota) => url.includes(rota));
+};
+
+const logoutSessaoExpirada = async () => {
+   if (isLoggingOut) return;
+
+   try {
+      isLoggingOut = true;
+      delete api.defaults.headers.common['Authorization'];
+      await setTokensStorage('', '');
+      await queryClient.cancelQueries();
+      queryClient.removeQueries({
+         predicate: (query) => query.queryKey[0] !== 'usuarioTokens',
+      });
+      queryClient.setQueryData(['usuarioTokens'], { token: '', refreshToken: '' });
+   } finally {
+      isLoggingOut = false;
+   }
+};
 
 api.interceptors.request.use(
    async (config) => {
@@ -26,27 +52,36 @@ api.interceptors.request.use(
 );
 
 const refreshAuthTokens = async () => {
-   try {
-      const refreshToken = (await getTokensStorage()).refreshToken;
-      if (!refreshToken) {
-         throw new Error('Refresh token não encontrado.');
-      }
-      const response = await axios.post(
-         `${URL_BACKEND}/usuario/refresh-token`,
-         { refresh_token: refreshToken },
-         {
-            headers: {
-               'Content-Type': 'application/json',
-            },
+   if (refreshPromise) return refreshPromise;
+
+   refreshPromise = (async () => {
+      try {
+         const refreshToken = (await getTokensStorage()).refreshToken;
+         if (!refreshToken) {
+            throw new Error('Refresh token não encontrado.');
          }
-      );
-      const { access_token, refresh_token } = response.data.data;
-      await setTokensStorage(access_token, refresh_token);
-      return { token: access_token, refreshToken: refresh_token };
-   } catch (error) {
-      console.error('Erro ao atualizar o token:', (error as any)?.response?.data);
-      throw error;
-   }
+         const response = await axios.post(
+            `${URL_BACKEND}/usuario/refresh-token`,
+            { refresh_token: refreshToken },
+            {
+               headers: {
+                  'Content-Type': 'application/json',
+               },
+            }
+         );
+         const { access_token, refresh_token } = response.data.data;
+         await setTokensStorage(access_token, refresh_token);
+         return { token: access_token, refreshToken: refresh_token };
+      } catch (error) {
+         console.error('Erro ao atualizar o token:', (error as any)?.response?.data);
+         await logoutSessaoExpirada();
+         throw error;
+      } finally {
+         refreshPromise = null;
+      }
+   })();
+
+   return refreshPromise;
 };
 
 api.interceptors.response.use(
@@ -57,7 +92,7 @@ api.interceptors.response.use(
    async (error) => {
       console.error('❌ Erro na resposta:', error.response?.status || 'Sem status', error.config?.url, error.message);
       const originalRequest = error.config;
-      if(!listaRotasSemAuth.includes(originalRequest.url)){
+      if (originalRequest && !isRotaSemAuth(originalRequest.url)) {
          if (error.response && error.response.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
             try {
@@ -68,6 +103,9 @@ api.interceptors.response.use(
             } catch (error) {
                return Promise.reject(error);
             }
+         }
+         if (error.response && error.response.status === 401) {
+            await logoutSessaoExpirada();
          }
       }
       return Promise.reject(error);
