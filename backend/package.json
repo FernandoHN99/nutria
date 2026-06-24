@@ -1,5 +1,5 @@
 {
-   "name": "backend",
+   "name": "backend-nutria",
    "version": "0.0.1",
    "description": "NutrIA Backend API - Express + TypeORM",
    "private": true,
@@ -35,11 +35,17 @@
    },
    "scripts": {
       "dev": "NODE_NO_WARNINGS=1 tsx watch src/app.ts",
-      "start": "node build/app.js",
       "typeorm": "tsx ./node_modules/typeorm/cli.js",
-      "db:migrate": "npx tsx src/database/run-migrations.ts",
-      "db:migrate:revert": "npx tsx src/database/run-migrations-revert.ts",
+
+      "db:migrate": "tsx ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
+      "db:migrate:revert": "tsx ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts",
       "db:seed": "tsx src/database/seed.ts",
+      "db:setup": "npm run db:migrate && npm run db:seed",
+
+      "db:migrate:prod": "node ./node_modules/typeorm/cli.js migration:run -d build/database/data-source.js",
+      "db:seed:prod": "node build/database/seed.js",
+      "db:setup:prod": "npm run db:migrate:prod && npm run db:seed:prod",
+      "start": "npm run db:setup:prod && node build/app.js",
       "build": "tsup src --out-dir build && mkdir -p build/data/seeds && cp data/seeds/*.csv build/data/seeds/"
    }
 }
