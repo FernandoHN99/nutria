@@ -43,7 +43,15 @@ NutrIA é um aplicativo inteligente para contabilização de calorias e acompanh
    cd nutria
    ```
 
-#### 2. Backend
+#### 2. Modo rápido (recomendado)
+
+Com Docker rodando, um único comando instala as dependências (se faltarem), cria os `.env` (gerando os JWT secrets automaticamente), sobe o Postgres, roda migrations + seed, e inicia backend e Expo juntos:
+```bash
+npm run dev
+```
+`Ctrl+C` encerra os dois. Pode rodar de novo a qualquer momento — migrations e seed são idempotentes. Se preferir configurar cada parte manualmente (ou adicionar a `BACKEND_OPEN_AI_API_KEY` para o chatbot antes de começar), siga os passos abaixo.
+
+#### 3. Modo Individual - Backend
 
 0. Instale as dependências:
    ```bash
@@ -87,7 +95,7 @@ NutrIA é um aplicativo inteligente para contabilização de calorias e acompanh
    npm run dev
    ```
 
-#### 3. Frontend
+#### 4. Modo Individual - Frontend
 0. Instale as dependências (em outro terminal):
    ```bash
    cd frontend

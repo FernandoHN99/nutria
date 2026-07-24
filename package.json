@@ -1,0 +1,9 @@
+{
+   "name": "nutria",
+   "version": "1.0.0",
+   "private": true,
+   "description": "NutrIA dev orchestration only — backend/ and frontend/ remain independent packages with their own dependencies, install separately inside each",
+   "scripts": {
+      "dev": "node scripts/dev.js"
+   }
+}
