@@ -43,91 +43,84 @@ NutrIA é um aplicativo inteligente para contabilização de calorias e acompanh
    cd nutria
    ```
 
-#### 2. Instale as dependências na raiz
-1. Instale tudo uma vez, a partir da raiz do projeto:
+#### 2. Backend
+
+0. Instale as dependências:
    ```bash
+   cd backend
    npm install
    ```
 
-#### 3. Backend
-
-0. Gere as JWT secrets seguros, execute no terminal:
+1. Gere as JWT secrets seguras, execute no terminal:
    ```bash
    node -e "console.log(require('crypto').randomBytes(64).toString('base64'))"
    ```
-   Guarde o resultado para usar no `BACKEND_JWT_SECRET` e `BACKEND_REFRESH_SECRET` mais a frente.
+   Guarde o resultado para usar no `BACKEND_JWT_SECRET` e `BACKEND_REFRESH_SECRET` mais a frente. Rode o comando duas vezes (um valor para cada secret).
 
-1. Suba o banco de dados com Docker:
+2. Suba o banco de dados com Docker:
    ```bash
    docker compose up -d
    ```
 
-2. Crie os arquivos de ambiente:
+3. Crie o arquivo de ambiente a partir do exemplo:
    ```bash
-   # Para desenvolvimento local (com Docker)
-   cp backend/.env.local.example backend/.env.local
-   
-   # Para produção (usando DATABASE_URL)
-   cp backend/.env.example backend/.env
+   cp .env.example .env
    ```
 
-3. **Para Desenvolvimento Local:**
-   - Use `backend/.env.local` (já pré-configurado para Docker)
-   - As credenciais padrão são: `usuario: nutria`, `senha: nutria`, `database: nutria`
-   - Configure `BACKEND_JWT_SECRET` e `BACKEND_REFRESH_SECRET` com valores seguros
-   - Adicione apenas `BACKEND_OPEN_AI_API_KEY` se for usar o chatbot
+   `backend/.env.example` traz um único template com blocos comentados para os dois cenários — a aplicação sempre lê apenas `backend/.env` (nunca `.env.local`), então escolha um bloco e comente/descomente conforme o caso:
+   - **Desenvolvimento local (Docker):** mantenha `BACKEND_DB_HOST`, `BACKEND_DB_PORTA`, `BACKEND_DB_USUARIO`, `BACKEND_DB_SENHA` e `BACKEND_DB_DATABASE` descomentados (já pré-configurados para o `docker-compose.yml`, credenciais padrão `nutria`/`nutria`/`nutria`).
+   - **Produção (Render/Neon):** comente o bloco de `BACKEND_DB_*` e descomente `BACKEND_DATABASE_URL`, preenchendo com a string de conexão do seu banco (ela tem prioridade quando definida).
+   - Em ambos os casos, configure `BACKEND_JWT_SECRET` e `BACKEND_REFRESH_SECRET` com os valores gerados no passo 1, e adicione `BACKEND_OPEN_AI_API_KEY` apenas se for usar o chatbot.
 
-4. **Para Produção (Render/Neon):**
-   - Use `backend/.env` 
-   - Preencha `BACKEND_DATABASE_URL` com a string de conexão do seu banco em produção
-   - Configure `BACKEND_JWT_SECRET` e `BACKEND_REFRESH_SECRET` com valores seguros
-
-5. Execute as migrations para criar as tabelas do banco de dados:
+4. Execute as migrations para criar as tabelas do banco de dados:
    ```bash
-   npm run backend:migrate
+   npm run db:migrate
    ```
 
-6. Popule o banco com os alimentos verificados:
+5. Popule o banco com os alimentos verificados:
    ```bash
-   npm run backend:seed
+   npm run db:seed
    ```
 
-7. Inicie o servidor:
+6. Inicie o servidor:
    ```bash
-   npm run dev:backend
+   npm run dev
    ```
 
-#### 4. Frontend
-1. Crie o arquivo de ambiente:
+#### 3. Frontend
+0. Instale as dependências (em outro terminal):
    ```bash
-   cp frontend/.env.example frontend/.env
+   cd frontend
+   npm install
    ```
 
-2. Configure o `frontend/.env` com o endereço do backend:
+1. Crie o arquivo de ambiente a partir do exemplo:
+   ```bash
+   cp .env.example .env
+   ```
+
+   `frontend/.env.example` também traz um único template comentado para local e produção:
    ```env
-   BACKEND_URL=http://localhost
-   BACKEND_PORTA=5001
+   EXPO_PUBLIC_BACKEND_URL=http://localhost
+   EXPO_PUBLIC_BACKEND_PORTA=5001
    ```
 
    > **Observação para Múltiplos Dispositivos:**
    > Se estiver testando em um dispositivo físico (não no simulador), substitua `localhost` pelo **IP local da máquina** que hospeda o backend:
    > ```env
-   > BACKEND_URL=http://192.168.1.100  # Seu IP local
-   > BACKEND_PORTA=5001
+   > EXPO_PUBLIC_BACKEND_URL=http://192.168.1.100  # Seu IP local
+   > EXPO_PUBLIC_BACKEND_PORTA=5001
    > ```
    > Para descobrir seu IP: `ifconfig` (Mac/Linux) ou `ipconfig` (Windows)
+   >
+   > Para apontar para o backend em produção, descomente a linha `EXPO_PUBLIC_BACKEND_URL` do bloco de produção no `.env.example`.
 
-3. Inicie o aplicativo com o Expo:
+2. Inicie o aplicativo com o Expo:
    ```bash
-   npm run dev:frontend
+   npm start
    ```
 
-#### 5. Executar os dois juntos
-```bash
-npm run dev
-```
-
-> **Estrutura do projeto com workspaces:** há um único `node_modules` gerenciado na raiz do repositório, enquanto `backend/` e `frontend/` mantêm seus próprios `package.json` e `.env` separados.
+> **Estrutura do projeto:** `backend/` e `frontend/` são pacotes independentes, cada um com seu próprio `package.json`, `node_modules` e `.env`. Rode o backend e o frontend em terminais separados (não há um script único na raiz para subir os dois).
 
 ## ✒️ Autores
 * Fernando Henriques Neto &nbsp;18.00931-0 
