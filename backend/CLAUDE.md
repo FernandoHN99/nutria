@@ -1,293 +1,137 @@
 # CLAUDE.md — Backend
 
-This file provides guidance to Claude Code when working on the NutrIA backend (Node.js + Express + TypeORM).
+Express + TypeORM API. Layered architecture, Zod validation at the controller boundary, JWT auth, and an OpenAI-backed chatbot that can call back into the app's own services.
 
-## Quick Start
+## Commands
 
-**Development:**
 ```bash
-npm run dev          # Start with file watching (tsx watch)
+npm run dev                 # dev server (tsx watch src/app.ts)
+npm run build                # compile with tsup → build/, copies data/seeds/*.csv along
+npm start                    # run compiled build/app.js (production)
+npm run db:migrate           # run pending TypeORM migrations (dev, src/*.ts via tsx)
+npm run db:migrate:revert    # revert last migration
+npm run db:migrate:prod      # same, against compiled build/database/data-source.js
+npm run db:seed / db:seed:prod   # populate verified foods from data/seeds/*.csv (idempotent)
+npm run db:setup / db:setup:prod # migrate + seed in one go
 ```
 
-**Build & Production:**
-```bash
-npm run build        # Compile to build/ directory using tsup
-npm start            # Run compiled output (for production)
-```
+## Env
 
-**Database Migrations & Seed:**
-```bash
-npm run db:migrate          # Run pending migrations
-npm run db:migrate:revert   # Revert last migration
-npm run db:seed             # Populate verified foods (idempotent)
-```
+Copy `.env.example` → `.env`. All vars are prefixed `BACKEND_`:
+- `BACKEND_DB_HOST/PORTA/USUARIO/SENHA/DATABASE` — local Postgres (Docker). Ignored if `BACKEND_DATABASE_URL` is set (production/Neon/Supabase takes precedence — see `src/database/data-source.ts`).
+- `BACKEND_JWT_SECRET` / `BACKEND_REFRESH_SECRET` — sign access (1h) and refresh (7d) tokens independently.
+- `BACKEND_OPEN_AI_API_KEY` — only needed for the chatbot.
+- `BACKEND_NODE_ENV=production` switches the migrations glob from `src/database/migrations/*.ts` to `build/database/migrations/*.js`.
 
-## Environment Setup
+Port is hardcoded to **5001** in `src/config/variaveis.ts` (`PORTA_BACKEND`); Render's `PORT` env var overrides it at listen-time (see `servidor.ts`).
 
-### Local Development
-Create `.env` in `backend/` with PostgreSQL credentials:
-```
-DB_USUARIO=postgres
-DB_HOST=localhost
-DB_DATABASE=nutria
-DB_SENHA=nutria
-DB_PORTA=5432
-
-JWT_SECRET=your-secret-key
-OPEN_AI_API_KEY=sk-...
-```
-
-### Production (Neon/Render)
-Use single `DATABASE_URL`:
-```
-DATABASE_URL=postgresql://user:password@host/database
-JWT_SECRET=your-secret-key
-OPEN_AI_API_KEY=sk-...
-```
-
-**See `.env.example` for complete reference.**
-
-Port: Backend runs on **port 5001** locally (hardcoded in `config/variaveis.ts`); on Render, uses `PORT` env var if set.
-
-## Code Architecture
-
-### Entry Point → Server Initialization
+## How a request flows
 
 ```
-app.ts
-  └─> Servidor class (app/servidor.ts)
-       ├─ Express app setup
-       ├─ Middleware (CORS, JSON parser, JWT auth)
-       ├─ Route registration
-       └─ Database init (AppDataSource.initialize())
+app.ts (registers Rota[] + Servidor) → Servidor (Express app, middleware, auth)
+  → Rota (per-domain router, e.g. UsuarioRotas)
+     → Controller (Zod-validates req.body, calls Service, returns JsonReponseSucesso)
+        → Service (business logic, orchestrates repositories)
+           → Repository (thin wrapper around TypeORM's repository/query builder)
+              → Entity (TypeORM model, decorators define the table)
 ```
 
-### Request Handling Pattern
-
-**All routes follow this flow:**
-
-1. **Route Class** (`app/rotas/*.ts`): Extends `Rota` interface
-   - Property: `caminho` (path, e.g., `/usuario`)
-   - Property: `roteador` (Express Router instance)
-   - Constructor: Registers HTTP methods with controllers
-
-2. **Controller** (`app/controllers/*Controller.ts`): Handles HTTP requests
-   - Receives `req: Request, res: Response` (Express)
-   - Parses & validates JSON with Zod schema
-   - Calls Service layer for business logic
-   - Returns `JsonReponseSucesso` on success or throws `JsonReponseErro` on failure
-
-3. **Service** (`app/services/*Service.ts`): Business logic
-   - Contains domain rules, calculations, API calls (OpenAI, Supabase)
-   - Calls Repository for data access
-
-4. **Repository** (`app/repositories/*Repository.ts`): Database access
-   - Wraps TypeORM's repository
-   - Provides custom query methods specific to the Entity
-
-5. **Entity** (`app/entities/*.ts`): TypeORM model
-   - Defines table schema (columns, relations)
-   - Auto-mapped to PostgreSQL tables
-
-**Example Flow:**
+Concrete example — `POST /nutria/usuario/login`:
 ```
-POST /nutria/usuario/login
-  → UsuarioRotas.roteador
-  → UsuarioController.fazerLogin()
-     ├─ Zod validation (efetuarLoginSchema)
-     → UsuarioService.fazerLogin()
-        └─ UsuarioRepository.findByEmail()
-           └─ TypeORM query via AppDataSource
+UsuarioRotas → UsuarioController.fazerLogin()
+   ├─ efetuarLoginSchema.safeParse(req.body)   // Zod
+   → UsuarioService.fazerLogin()
+      → ContaRepositorio.obterContaPorEmail() → bcrypt.compare() → jwt.sign()
 ```
 
-### Error Handling
+### `Servidor` (`src/app/servidor.ts`)
 
-- **Util.envolveFuncTryCatch()** wraps all route handlers
-- Controllers **throw `JsonReponseErro`** on validation/business logic failures
-- `JsonReponseSucesso` & `JsonReponseErro` have `codigo`, `mensagem`, `erro` fields
-- **500 errors** are caught globally and returned with generic message
+One class that wires everything: `configurarMiddlewares()` sets up `cookie-parser`, `cors`, JSON body parsing (50mb limit for base64 photos/images), request logging, and a global auth gate; `ativarSubRotas()` mounts every `Rota` under `/nutria`; `iniciarServicos()` calls `AppDataSource.initialize()` then starts listening.
 
-**Usage in Controller:**
-```typescript
-if (!resultadoParse.success) {
-   JsonReponseErro.lancar(400, 'JSON inválido', resultadoParse.error);
-}
-```
+The auth gate is a single middleware run on **every** request before routing: if `req.url` is in `listaRotasSemAuth` (`config/variaveis.ts`) it calls `next()`, otherwise it goes through `authenticarTokenBearer()`, which verifies the `Authorization: Bearer <token>` header with `jsonwebtoken` and injects the decoded `sub` claim as `req.body.id_usuario`. Every authenticated controller reads the caller's id from `req.body.id_usuario`, never from a route param — controllers never trust a client-supplied user id.
 
-### Authentication & Authorization
+Currently whitelisted (no auth required): `/nutria/health`, `/nutria/usuario/criar`, `/nutria/usuario/login`, `/nutria/usuario/refresh-token`.
 
-- **JWT Bearer tokens** issued on login; stored in frontend's AsyncStorage
-- **Middleware** in `Servidor.authenticarTokenBearer()` validates all requests
-- **Whitelist** in `config/variaveis.ts`: `listaRotasSemAuth` (routes that skip auth)
-  - Currently: `/nutria/usuario/criar`, `/nutria/usuario/login`, `/nutria/usuario/refresh-token`
-- **User ID** extracted from JWT `sub` claim → injected into `req.body.id_usuario`
+### Controllers, `Util.envolveFuncTryCatch`, and error handling
 
-### Validation Layer
+Controllers are plain classes with async methods bound as Express handlers via `Util.envolveFuncTryCatch(this, this.metodo)` (see each `*Rotas.ts`). That wrapper:
+- awaits the handler, and if it resolves, writes `res.status(codigo).json(jsonReponseSucesso)`;
+- if the handler throws a `JsonReponseErro`, writes that error's own `codigo`/`mensagem`;
+- any other thrown error becomes a generic `500`.
 
-**All controllers use Zod schemas** from `app/schemas/`:
+So controllers never call `res.json()` themselves — they either `return new JsonReponseSucesso(codigo, mensagem, dados)` or call `JsonReponseErro.lancar(codigo, mensagem, erro?)` (which just `throw`s). Response envelope is always `{ sucesso, codigo, mensagem, dados }` on success or `{ sucesso, codigo, mensagem, erro }` on failure (`src/utils/jsonReponses.ts`).
 
-```typescript
-const resultadoParse = criarUsuarioSchema.safeParse(req.body);
-if (!resultadoParse.success) {
-   JsonReponseErro.lancar(400, 'JSON inválido', resultadoParse.error);
-}
-// resultadoParse.data is now typed & safe to use
-```
+Validation is always the controller's first move: `algumSchema.safeParse(req.body)`, and on failure `JsonReponseErro.lancar(400, 'JSON inválido', resultadoParse.error)`. Schemas live in `app/schemas/<dominio>/` and each also exports the inferred TS type (e.g. `criarUsuarioObject`) used by services/entities.
 
-**Why Zod:**
-- Runtime validation (catches frontend bugs)
-- Type-safe post-validation (`resultadoParse.data` is typed)
-- Clear error messages
+### Services & Repositories
 
-### Database & ORM
+Services hold business logic and are the only layer allowed to compose multiple repositories or call external APIs (OpenAI). Repositories wrap TypeORM — either `Repository<Entity>` methods or `createQueryBuilder`. Entities extend TypeORM's `ActiveRecord`-style `BaseEntity`, so services also call `.save()` directly on entity instances in places (e.g. `UsuarioService.criarUsuario`).
 
-**Provider:** PostgreSQL via Supabase  
-**ORM:** TypeORM (v0.3.20)
+### Events (`src/utils/eventos.ts`)
 
-**Key Settings:**
-- `synchronize: false` — Do NOT auto-sync schema; use migrations
-- Entities manually registered in `data-source.ts`
-- Repositories extend TypeORM's base repository
+A tiny singleton wrapping Node's `EventEmitter`, used to decouple side effects from the request that triggered them. Currently one listener: on `'usuarioCriado'` (emitted by `UsuarioService.criarUsuario`), it creates the user's default `Cartao`s (goal cards) and `Refeicao`s (meals) via `CartaoService`/`RefeicaoService`. Add new cross-cutting side effects here instead of chaining them inline in a service.
 
-**Common Queries (via Repository):**
-```typescript
-const user = await userRepo.findOne({ where: { id: userId } });
-const users = await userRepo.find({ where: { status: 'active' } });
-const result = await userRepo.createQueryBuilder('user')
-   .where('user.email = :email', { email })
-   .getOne();
-```
+### Database & migrations
 
-### OpenAI Integration
+- TypeORM (`v0.3.20`), Postgres, **`synchronize: false`** always — every schema change is a migration under `src/database/migrations/`, generated/run via the `typeorm` CLI (through `tsx`, see scripts above). Never hand-edit the schema outside a migration.
+- Entities are registered by hand in the `entities: [...]` array in `src/database/data-source.ts` — a new entity file alone does nothing until it's added there.
+- Two custom TypeORM column transformers in `Util` (`src/utils/util.ts`): `transformerStringNumber` (numeric columns come back from `pg` as strings — parses to `number`) and `transformerByteaString` (bytea photo blobs → string). Reuse these on any new numeric/bytea column instead of re-parsing in services.
+- Seeding (`src/database/seed.ts`, `data/seeds/*.csv`, ~1607 foods): idempotent (skips if data already present), batch-inserts 200 rows/transaction, CSV parser handles quoted/comma-containing fields.
 
-The ChatBot feature calls OpenAI's API:
-- Service layer handles API calls
-- Use `OPEN_AI_API_KEY` from env
-- Ensure chat payloads match current OpenAI API schema
+### Chatbot / OpenAI (`app/services/chatBotService.ts`)
 
-## Project Structure
+`ChatBotService` wraps the `openai` SDK (`gpt-4o-mini` normally, `gpt-4o` when the message text matches a "please add this" verb from `comandosDeFuncoes`, so it can pass a tool/function schema). Two entry points:
+- `perguntar()` — sends the chat history with a system prompt tuned to short, nutrition-only answers; if the model responds with a `tool_calls[0]`, it's routed through `chamarAcaoBackend()`, which currently handles one function (`add_consumo_alimento`) by calling straight into `AlimentoConsumidoService.cadastrarAlimentosConsumidos()` — i.e. the chatbot can write to the user's log itself, not just talk about it.
+- `analisarFoto()` — sends a food photo to `gpt-4o-mini` with a vision-style prompt to extract foods/macros/calories as text, then feeds that text back through `perguntar()` so the same tool-calling path can log it.
+
+Function schemas for tool-calling live in `src/utils/modelosFuncoesOpenAI/`.
+
+## Adding a feature
+
+1. **Entity** (`app/entities/MiEntidade.ts`) — TypeORM decorators, then register it in `src/database/data-source.ts`'s `entities` array.
+2. **Repository** (`app/repositories/`) — query methods specific to the entity.
+3. **Service** (`app/services/`) — business logic, calls repositories.
+4. **Zod schema** (`app/schemas/<dominio>/`) — request validation + inferred type export.
+5. **Controller** (`app/controllers/`) — parse → call service → return `JsonReponseSucesso` / throw `JsonReponseErro`.
+6. **Rota** (`app/rotas/`) — implements the `Rota` interface (`caminho`, `roteador`, `controller`), wraps each handler in `Util.envolveFuncTryCatch`.
+7. **Register** the new `Rota` instance in `listaRotas` in `src/app.ts`.
+8. If it changes the schema, generate/write a migration — never rely on `synchronize`.
+
+## Domains (entities)
+
+| Entity | Purpose |
+|---|---|
+| **Conta** | Login credentials (email + bcrypt hash), separate from `Usuario` profile data |
+| **Usuario** | User profile (name, birth date, country, sex, unit system, diet type) |
+| **Perfil** | Goals/measurements used for calorie & macro targets |
+| **Dia** | Daily log entry: weight, abdomen measurement, progress photo |
+| **Refeicao** | A meal slot (Café, Almoço, Jantar, Lanche, or user-defined) |
+| **AlimentoConsumido** | A food entry logged against a `Refeicao` |
+| **Alimento** | Food database entry (macros/calories), verified (seeded) or user-created |
+| **AlimentoFavorito** | User's bookmarked foods |
+| **Prato** / **AlimentoPrato** | User-defined recipe and its ingredient lines |
+| **Cartao** | Goal card per user: type is `MACROS`, `CALORIAS`, or `DIETA FLEXIVEL` |
+| **CodigoDeBarras** | Barcode → food lookup |
+| **TabelaNutricional** | Nutrition table data backing `Alimento` |
+
+## Project structure
 
 ```
 backend/
 ├── src/
-│   ├── app/                 # Application logic
-│   │   ├── controllers/     # HTTP request handlers
-│   │   ├── services/        # Business logic
-│   │   ├── repositories/    # Database access layer
-│   │   ├── entities/        # TypeORM models
-│   │   ├── rotas/           # Express routes
-│   │   └── schemas/         # Zod validation schemas
+│   ├── app/
+│   │   ├── controllers/   # HTTP handlers, Zod validation, JsonReponse* returns
+│   │   ├── services/      # business logic, orchestration, OpenAI calls
+│   │   ├── repositories/  # TypeORM data access
+│   │   ├── entities/      # TypeORM models (BaseEntity)
+│   │   ├── rotas/         # Express routers, one per domain, implement Rota
+│   │   └── schemas/       # Zod schemas + inferred types, one folder per domain
 │   ├── database/
-│   │   ├── data-source.ts   # TypeORM config & initialization
-│   │   ├── migrations/      # TypeORM migration files
-│   │   └── seed.ts          # Seed script for initial data
-│   ├── config/              # Environment & constants
-│   └── utils/               # Shared utilities
-├── data/
-│   └── seeds/               # CSV files for database seeding
-├── build/                   # Compiled output (git-ignored)
-└── package.json
+│   │   ├── data-source.ts # DataSource config, entities list, migrations glob
+│   │   ├── migrations/    # TypeORM migration files (only source of schema truth)
+│   │   └── seed.ts        # CSV-based food seeding
+│   ├── config/variaveis.ts # env vars + shared enums/constants (both sides mirror the enum values)
+│   └── utils/             # Util (helpers/transformers), Rota interface, JsonReponse*, Eventos
+├── data/seeds/             # CSV food data consumed by seed.ts
+└── build/                  # tsup output (git-ignored)
 ```
-
-## Database Seeding
-
-**Setup:**
-1. Run migrations: `npm run db:migrate`
-2. Seed with verified foods: `npm run db:seed`
-
-**The Seed Script:**
-- Location: `src/database/seed.ts`
-- Data source: `data/seeds/*.csv` (1607 foods + nutrition tables)
-- Idempotent: checks if already seeded; skips if found
-- Batch insert: 200 records per transaction for performance
-- CSV parser: handles quoted fields and special characters (commas in names)
-
-**To reseed after modifications:**
-1. Delete seed records manually or via SQL
-2. Rerun `npm run db:seed`
-
-## Domains (Entity Groups)
-
-| Entity | Purpose |
-|--------|---------|
-| **Usuario** | User account & profile |
-| **Perfil** | User goals, dietary preferences, measurements |
-| **Dia** | Daily nutrition log |
-| **Refeicao** | Meal (breakfast, lunch, etc.) |
-| **AlimentoConsumido** | Food item logged in a meal |
-| **Alimento** | Food database entry (macros, cals) |
-| **AlimentoFavorito** | User's bookmarked foods |
-| **Prato** | Recipe/meal template |
-| **AlimentoPrato** | Food item in a recipe |
-| **TabelaNutricional** | Nutrition data (deprecated or reference?) |
-| **Cartao** | User's goal card (MACROS, CALORIAS, DIETA FLEXIVEL) |
-| **CodigoDeBarras** | Barcode lookup (optional feature) |
-
-## Key Utilities
-
-- **`utils/rota.ts`**: Interface defining route structure
-- **`utils/util.ts`**: 
-  - `envolveFuncTryCatch()` — wraps controllers with error handling
-  - Validation helpers (`validarString()`, `validarNumero()`, etc.)
-  - `exportarColecaoInstancias()` — dynamic route loading (unused, routes are hardcoded)
-- **`utils/jsonReponses.ts`**: `JsonReponseSucesso` & `JsonReponseErro` classes
-- **`utils/eventos.ts`**: Likely event handling (TBD—check if used)
-- **`config/variaveis.ts`**: All env vars, constants, meal/gender/activity enums
-
-## Adding a New Feature
-
-**1. Create Entity** (`app/entities/MyEntity.ts`):
-   - Define TypeORM columns, relations
-   - Add to `data-source.ts` entities list
-
-**2. Create Repository** (`app/repositories/MyRepository.ts`):
-   - Custom query methods for MyEntity
-
-**3. Create Service** (`app/services/MyService.ts`):
-   - Use repository for DB access
-   - Implement business logic
-
-**4. Create Zod Schema** (`app/schemas/my/mySchema.ts`):
-   - Define input validation
-
-**5. Create Controller** (`app/controllers/MyController.ts`):
-   - Import schema & service
-   - Validate → call service → return response
-
-**6. Create Route** (`app/rotas/MyRotas.ts`):
-   - Extend `Rota` interface
-   - Register HTTP methods with controllers
-
-**7. Register Route** in `app.ts`:
-   - Add to `listaRotas` array
-
-## Response Format
-
-All responses are JSON:
-
-**Success (200, 201, etc.):**
-```json
-{
-  "sucesso": true,
-  "codigo": 200,
-  "mensagem": "Descrição do sucesso",
-  "dados": { ... }
-}
-```
-
-**Error (4xx, 5xx):**
-```json
-{
-  "sucesso": false,
-  "codigo": 400,
-  "mensagem": "Descrição do erro",
-  "erro": { ... }
-}
-```
-
-## Deployment Notes
-
-- On Render, the server binds to `0.0.0.0` (checked via `'RENDER' in process.env`)
-- PostgreSQL connection pooling: check Supabase settings if scaling
-- OpenAI API key must be kept secret; never commit to git
-- JWT refresh token logic exists but may need enhancements (see `usuarioController.obterNovoTokenAcesso()`)
